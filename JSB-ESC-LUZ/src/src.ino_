@@ -1,0 +1,72 @@
+#include <JsbIotSensorTouchCapacitive.h>
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+
+const char* SSID = "JSBEsc"
+const char* PASSWORD = "jj1234567890"
+
+ESP8266WebServer server(80);
+
+const byte pinLed = 10;
+const byte pinRele = 6;
+const short luzMinimaParaLedDesligado = 10;
+const long sensibilidade = 50;
+const byte pinSensorCapacitivo1 = 4;
+const byte pinSensorCapacitivo2 = 5;
+
+JsbIotSensorTouchCapacitive sensorTouch = JsbIotSensorTouchCapacitive(
+	pinSensorCapacitivo1, pinSensorCapacitivo2, pinRele, pinLed, sensibilidade);
+
+void exibirStatusSensor() {
+	// HTML da pagina principal
+	String html = "<html><head><title>Status relé escritório</title>";
+	html += "</head><body>";
+	html += "Relé ativado: " + sensorTouch.isReleAtivado();
+	html += "</body></html>";
+	// Enviando HTML para o servidor
+	server.send(200, "text/html", html);
+}
+
+void setup(){
+  //sensor.ativarLog();
+  Serial.begin(19200);
+
+	WiFi.begin(SSID, PASSWORD);
+
+  IPAddress ip = IPAddress(192,168,1,150);
+	IPAddress dns = IPAddress(192,168,1,1);
+	IPAddress gateway = IPAddress(192, 168, 1, 1);
+	IPAddress subnet = IPAddress(255,255,255,1);
+
+  WiFi.config(ip, dns, gateway, subnet);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print("Não conectado");
+  }
+
+  // Mostrando IP
+  Serial.println("");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Atribuindo urls para funções
+  // Quando não especificado método, uma função trata todos
+  server.on("/", exibirStatusSensor);
+  server.on("/ligar", sensorTouch.acionarRele);
+  server.on("/deslicar", sensorTouch.desligarRele;
+
+  // Iniciando servidor
+  server.begin();
+
+  // Apenas informando que servidor iniciou
+  Serial.println("HTTP server started");
+}
+
+void loop(){
+  sensorTouch.executar();
+  delay(50);
+}
